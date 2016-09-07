@@ -1,0 +1,77 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name "central snapshots"
+            url "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    dependencies {
+        classpath group: 'com.techshroom', name: 'Aversion', version: '3.0.0'
+    }
+}
+apply plugin: 'application'
+apply plugin: 'aversion-util'
+apply plugin: 'idea'
+
+mainClassName = 'com.techshroom.apitt.Main'
+applicationDefaultJvmArgs = ['-XstartOnFirstThread']
+
+util {
+    javaVersion = '1.8'
+}
+idea.project.languageLevel = util.javaVersion
+
+configurations.all {
+    resolutionStrategy {
+        cacheChangingModulesFor 0, 'seconds'
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name "central snapshots"
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+}
+
+ext.lwjglVersion = '3.0.1-SNAPSHOT'
+
+def addLWJGL(ext, natives) {
+    // "lwjgl" or "lwjgl-ext"
+    def lwjgl = "lwjgl" + (ext ? "-" + ext : "")
+    def ver = project.lwjglVersion
+    project.dependencies {
+        compile group: 'org.lwjgl', name: lwjgl, version: ver
+        if (natives) {
+            compile group: 'org.lwjgl', name: lwjgl, version: ver, classifier: 'natives-macos'
+            compile group: 'org.lwjgl', name: lwjgl, version: ver, classifier: 'natives-linux'
+            compile group: 'org.lwjgl', name: lwjgl, version: ver, classifier: 'natives-windows'
+        }
+    }
+}
+
+dependencies {
+    // LWJGL
+    addLWJGL('', true);
+    addLWJGL('opengl', false);
+    addLWJGL('glfw', true);
+}
+
+javadoc {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+configure([compileJava, compileTestJava]) {
+    options.compilerArgs += ['-Xlint:all', '-Xlint:-path']
+    options.deprecation = true
+    options.encoding = 'UTF-8'
+    options.incremental = true
+    options.fork = true
+}
